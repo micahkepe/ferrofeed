@@ -2,10 +2,11 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use ferrofeed::{db, ui};
+use ferrofeed::{config, db, ui};
 
 #[derive(Parser)]
 struct Args {
+    /// Run with a specified configuration file.
     #[clap(short = 'c', long)]
     config_path: Option<PathBuf>,
 
@@ -39,11 +40,21 @@ enum Command {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    // Parse user config, if it exists
+    let cfg = config::Config::load(args.config_path)?;
+
     match args.command {
         Some(Command::Init {}) => {
-            // TODO: replace with parsed config value
-            let db = db::Db::open("ferrofeed.db")?;
+            let db = db::Db::open(
+                cfg.database_path
+                    .to_str()
+                    .expect("No database path specified"),
+            )?;
             db.init_feed_table()?;
+            Ok(())
+        }
+        Some(Command::Config {}) => {
+            println!("{:?}", cfg);
             Ok(())
         }
         Some(_) => {

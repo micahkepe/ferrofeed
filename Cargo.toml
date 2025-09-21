@@ -16,3 +16,5 @@ tokio = { version = "1", features = ["full"] }
 crossterm = "0.29.0"
 time = "0.3.44"
 toml = "0.9.7"
+serde = { version = "1.0.226", features = ["derive"] }
+directories = "6.0.0"

@@ -2,8 +2,6 @@ use anyhow::Result;
 use rusqlite::{Connection, params};
 use time::OffsetDateTime;
 
-const DEFAULT_DB_NAME: &str = "ferrofeed.db";
-
 /// Represents a feed entry in the `feed` table.
 #[derive(Debug)]
 pub struct Feed {
