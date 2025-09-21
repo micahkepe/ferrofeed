@@ -3,3 +3,4 @@ pub(crate) mod client;
 pub(crate) mod commands;
 pub(crate) mod config;
 pub(crate) mod db;
+pub mod ui;

@@ -2,6 +2,8 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+use ferrofeed::ui;
+
 #[derive(Parser)]
 struct Args {
     #[clap(short = 'c', long)]
@@ -33,6 +35,7 @@ enum Command {
     Config {},
 }
 
+/// Main entry point.
 fn main() -> Result<()> {
     let args = Args::parse();
 
@@ -43,7 +46,7 @@ fn main() -> Result<()> {
         }
         None => {
             // Open TUI
-            todo!()
+            ui::init()
         }
     }
 }
