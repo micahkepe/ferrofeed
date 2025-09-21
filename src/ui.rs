@@ -9,11 +9,24 @@ use ratatui::{
 };
 
 /// Active TUI state.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
     /// Whether the current TUI is still active
     running: bool,
+    /// The current page that the user is on.
+    current_page: CurrentScreen,
     // Additional state with go below...
+}
+
+/// The current page
+#[derive(Debug)]
+enum CurrentScreen {
+    /// The home library page.
+    ViewFeedsPage,
+    /// Viewing a selected post
+    PostView,
+    /// The help page.
+    HelpPage,
 }
 
 /// Initialize the TUI.
@@ -31,7 +44,10 @@ pub fn init() -> anyhow::Result<()> {
 impl App {
     /// Construct a new instance of [`App`].
     fn new() -> Self {
-        Self::default()
+        Self {
+            running: true,
+            current_page: CurrentScreen::ViewFeedsPage,
+        }
     }
 
     /// Runs the TUI application's main loop.
@@ -47,14 +63,18 @@ impl App {
     /// Renders the user interface.
     fn render(&mut self, frame: &mut Frame) {
         // Right now just have a placeholder frame
-        let title = Line::from("Hello World").bold().blue().centered();
+        let title = Line::from(" ferrofeed ").bold().blue().left_aligned();
         let text = "nulla commodo culpa magna quis dolore consectetur eiusmod\n\n\
             officia ut eu voluptate ex eiusmod commodo consectetur dolor\n\
-            exercitation quis ut\n\
-            Press `q` to quit";
+            exercitation quis ut";
+        let instructions = Line::from(vec![" Quit: ".into(), "<q> ".blue()]);
         frame.render_widget(
             Paragraph::new(text)
-                .block(Block::bordered().title(title))
+                .block(
+                    Block::bordered()
+                        .title(title)
+                        .title_bottom(instructions.right_aligned()),
+                )
                 .centered(),
             frame.area(),
         );
@@ -67,8 +87,8 @@ impl App {
     fn handle_crossterm_event(&mut self) -> Result<()> {
         match event::read()? {
             Event::Key(key) if key.kind.is_press() => self.on_key_event(key),
-            Event::Mouse(_) => todo!(),
-            Event::Resize(_, _) => todo!(),
+            Event::Mouse(_) => {}
+            Event::Resize(_, _) => {}
             _ => {}
         }
         Ok(())
@@ -79,10 +99,16 @@ impl App {
         match (key.modifiers, key.code) {
             (_, KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
+            (_, KeyCode::Char('?')) => self.display_help_popup(),
             _ => {
                 // Nothing, proceed with event loop
             }
         }
+    }
+
+    /// Display an overlay with the help pane over the current screen.
+    fn display_help_popup(&self) {
+        todo!()
     }
 
     /// Set the running state to false to quit the application.

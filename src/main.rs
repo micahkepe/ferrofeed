@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use ferrofeed::ui;
+use ferrofeed::{db, ui};
 
 #[derive(Parser)]
 struct Args {
@@ -40,6 +40,12 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
+        Some(Command::Init {}) => {
+            // TODO: replace with parsed config value
+            let db = db::Db::open("ferrofeed.db")?;
+            db.init_feed_table()?;
+            Ok(())
+        }
         Some(_) => {
             // Handle subcommands
             todo!()
