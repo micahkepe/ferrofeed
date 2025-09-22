@@ -2,7 +2,10 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use ferrofeed::{config, db, ui};
+use ferrofeed::{
+    config::{self},
+    db, ui,
+};
 
 #[derive(Parser)]
 struct Args {
@@ -16,8 +19,6 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Interactive prompt menu for creating and configuring a fresh RSS store.
-    Init {},
     /// Add a feed to the RSS store.
     AddFeed { url: String },
     /// Remove a feed to the RSS store.
@@ -41,20 +42,22 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     // Parse user config, if it exists
-    let cfg = config::Config::load(args.config_path)?;
+    let cfg = config::Config::load(args.config_path.clone())?;
+
+    // Load/create database and associated tables
+    let db = db::Db::open(
+        cfg.database_path
+            .to_str()
+            .expect("no database path specified"),
+    )?;
+    db.init_feed_table()?;
 
     match args.command {
-        Some(Command::Init {}) => {
-            let db = db::Db::open(
-                cfg.database_path
-                    .to_str()
-                    .expect("No database path specified"),
-            )?;
-            db.init_feed_table()?;
-            Ok(())
-        }
         Some(Command::Config {}) => {
-            println!("{:?}", cfg);
+            match toml::to_string_pretty(&cfg) {
+                Ok(s) => println!("{}", s),
+                Err(e) => eprintln!("{}", e),
+            }
             Ok(())
         }
         Some(_) => {

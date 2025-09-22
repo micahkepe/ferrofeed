@@ -1,15 +1,17 @@
 # ferrofeed
 
+> [!NOTE]
+> Under development, stay tuned.
+
 A RSS CLI and TUI for managing, viewing, and exporting
 [RSS](https://en.wikipedia.org/wiki/RSS) feeds.
 
-## Usage (Planned API)
+## Usage
 
 ```
 Usage: ferrofeed [OPTIONS] [COMMAND]
 
 Commands:
-  init         Interactive prompt menu for creating and configuring a fresh RSS store
   add-feed     Add a feed to the RSS store
   remove-feed  Remove a feed to the RSS store
   list         List current feeds in the RSS store
@@ -21,6 +23,6 @@ Commands:
   help         Print this message or the help of the given subcommand(s)
 
 Options:
-  -c, --config-path <CONFIG_PATH>
+  -c, --config-path <CONFIG_PATH>  Run with a specified configuration file
   -h, --help                       Print help
 ```

@@ -1,3 +1,5 @@
+use std::fs;
+
 use anyhow::Result;
 use rusqlite::{Connection, params};
 use time::OffsetDateTime;
@@ -26,6 +28,9 @@ impl Db {
     /// Open a new connection to a SQLite database. If a database does not exist
     /// at the path, one is created.
     pub fn open(path: &str) -> Result<Self> {
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            fs::create_dir_all(parent)?
+        }
         let conn = Connection::open(path)?;
         // Enable write-ahead logging and foreign key checking
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
@@ -47,6 +52,7 @@ impl Db {
         Ok(())
     }
 
+    /// Add a feed specified by URL and optional title the to database.
     pub fn add_feed(&self, url: &str, title: Option<&str>) -> Result<()> {
         let now = OffsetDateTime::now_utc().unix_timestamp();
         self.conn.execute(
@@ -56,6 +62,7 @@ impl Db {
         Ok(())
     }
 
+    /// List the feeds in the database.
     pub fn list_feeds(&self) -> Result<Vec<Feed>> {
         let mut stmt = self
             .conn

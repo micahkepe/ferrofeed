@@ -1,5 +1,5 @@
-use directories::ProjectDirs;
-use serde::Deserialize;
+use directories::BaseDirs;
+use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
@@ -10,22 +10,16 @@ const APP_CONFIG_FILE: &str = "ferrofeed.toml";
 /// The default app SQLite file.
 const DEFAULT_DB_NAME: &str = "ferrofeed.db";
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Path to the ferrofeed database file
     pub database_path: PathBuf,
 }
 
-/// Get the location of the cache, data, and config files as [`ProjectDirs`].
-fn get_project_dirs() -> ProjectDirs {
-    ProjectDirs::from("org", "ferrofeed", "ferrofeed")
-        .expect("Unable to determine config directory")
-}
-
 impl Default for Config {
     fn default() -> Self {
-        let project_dirs = get_project_dirs();
-        let data_dir = project_dirs.data_dir();
+        let base_dirs = BaseDirs::new().expect("couldn't get base directories, HOME not set?");
+        let data_dir = base_dirs.home_dir().join(".local/share/ferrofeed");
         Self {
             database_path: data_dir.join(DEFAULT_DB_NAME),
         }
@@ -33,13 +27,14 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Load and parse the user's configuration file, or the passed override path.
     pub fn load(config_path_override: Option<PathBuf>) -> Result<Self> {
-        let path = if let Some(p) = config_path_override {
-            p
-        } else {
-            let project_dirs = get_project_dirs();
-            project_dirs.config_dir().join(APP_CONFIG_FILE)
-        };
+        let default_config_path = BaseDirs::new()
+            .expect("unable to determine base directories")
+            .home_dir()
+            .join(".config/ferrofeed")
+            .join(APP_CONFIG_FILE);
+        let path = config_path_override.unwrap_or(default_config_path);
 
         if path.exists() {
             // Load data
@@ -49,6 +44,12 @@ impl Config {
                 .with_context(|| format!("failed to parse TOML config at {}", path.display()))?;
             Ok(cfg)
         } else {
+            // Create default
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent)?
+            }
+            let default = Config::default();
+            std::fs::write(&path, toml::to_string_pretty(&default)?)?;
             Ok(Config::default())
         }
     }
