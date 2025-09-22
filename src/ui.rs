@@ -3,16 +3,23 @@ use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame,
-    style::Stylize,
-    text::Line,
-    widgets::{Block, Paragraph},
+    prelude::Stylize,
+    style::{Color, Style},
+    text::{Line, Span},
+    widgets::{Block, Clear, Paragraph, Wrap},
 };
+
+use crate::ui::popup::{PopupState, get_centered_popup_area, pad_top_lines_center};
+
+pub mod popup;
 
 /// Active TUI state.
 #[derive(Debug)]
 pub struct App {
     /// Whether the current TUI is still active
     running: bool,
+    /// Any active popup
+    popup: Option<PopupState>,
     /// The current page that the user is on.
     current_page: CurrentScreen,
     // Additional state with go below...
@@ -25,8 +32,6 @@ enum CurrentScreen {
     ViewFeedsPage,
     /// Viewing a selected post
     PostView,
-    /// The help page.
-    HelpPage,
 }
 
 /// Initialize the TUI.
@@ -46,6 +51,7 @@ impl App {
     fn new() -> Self {
         Self {
             running: true,
+            popup: None,
             current_page: CurrentScreen::ViewFeedsPage,
         }
     }
@@ -64,10 +70,19 @@ impl App {
     fn render(&mut self, frame: &mut Frame) {
         // Right now just have a placeholder frame
         let title = Line::from(" ferrofeed ").bold().blue().left_aligned();
+
+        // TODO: populate with actual content and the correct layout
         let text = "nulla commodo culpa magna quis dolore consectetur eiusmod\n\n\
             officia ut eu voluptate ex eiusmod commodo consectetur dolor\n\
             exercitation quis ut";
-        let instructions = Line::from(vec![" Quit: ".into(), "<q> ".blue()]);
+
+        let instructions = Line::default().spans(vec![
+            " Help: ".into(),
+            "? ".blue(),
+            " | ".into(),
+            " Quit: ".into(),
+            "<q> ".blue(),
+        ]);
         frame.render_widget(
             Paragraph::new(text)
                 .block(
@@ -78,6 +93,10 @@ impl App {
                 .centered(),
             frame.area(),
         );
+
+        if let Some(popup) = &self.popup {
+            self.render_popup(frame, popup);
+        }
     }
 
     /// Reads the [`crossterm`] events and updates the state of [`App`].
@@ -99,16 +118,65 @@ impl App {
         match (key.modifiers, key.code) {
             (_, KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
-            (_, KeyCode::Char('?')) => self.display_help_popup(),
+            (_, KeyCode::Char('?')) => {
+                if self.popup.is_none() {
+                    self.popup = Some(PopupState::Help)
+                } else {
+                    // Quit help menu
+                    self.popup = None
+                }
+            }
             _ => {
                 // Nothing, proceed with event loop
             }
         }
     }
 
-    /// Display an overlay with the help pane over the current screen.
-    fn display_help_popup(&self) {
-        todo!()
+    /// Display a centered overlay with the given pane over the current screen.
+    fn render_popup(&self, frame: &mut Frame, popup: &PopupState) {
+        let area = frame.area();
+        let popup_area = get_centered_popup_area(area, 25, 20);
+        match popup {
+            PopupState::Help => {
+                let key_style = Style::default().fg(Color::Blue).bold();
+                let lines = vec![
+                    Line::from(vec![
+                        Span::raw("Move Up: "),
+                        Span::styled("↑", key_style),
+                        Span::raw(" / "),
+                        Span::styled("k", key_style),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("Move Down: "),
+                        Span::styled("↓", key_style),
+                        Span::raw(" / "),
+                        Span::styled("j", key_style),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("Toggle Help: "),
+                        Span::styled("?", key_style),
+                    ]),
+                    Line::from(vec![Span::raw("Quit: "), Span::styled("q", key_style)]),
+                ];
+
+                // Pad top lines to center vertically
+                let padded_lines = pad_top_lines_center(lines, popup_area, true);
+
+                let quit_instruction = Line::from(vec![" Exit Help: ".into(), "? ".blue()]);
+                frame.render_widget(Clear, popup_area);
+                frame.render_widget(
+                    Paragraph::new(padded_lines)
+                        .block(
+                            Block::bordered()
+                                .title(" Help ".blue())
+                                .title_bottom(quit_instruction.right_aligned()),
+                        )
+                        .centered()
+                        .wrap(Wrap { trim: true }),
+                    popup_area,
+                );
+            }
+        }
     }
 
     /// Set the running state to false to quit the application.
