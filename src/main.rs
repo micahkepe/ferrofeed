@@ -57,6 +57,7 @@ fn main() -> Result<()> {
             .expect("no database path specified"),
     )?;
     db.init_feed_table()?;
+    db.init_feed_item_table()?;
 
     match args.command {
         Some(Command::Config) => {
