@@ -21,8 +21,8 @@ struct Args {
 enum Command {
     /// Add a feed to the RSS store.
     AddFeed { url: String },
-    /// Remove a feed to the RSS store.
-    RemoveFeed {},
+    /// Remove a feed from the RSS store.
+    RemoveFeed { url: String },
     /// List current feeds in the RSS store.
     List,
     /// Manually trigger sync across RSS feeds.
@@ -30,11 +30,17 @@ enum Command {
     /// Export feed(s) as OPML.
     Export { feed: Option<Vec<String>> },
     /// Add a tag to feed(s).
-    Tag { feeds: Vec<String>, tag: String },
+    Tag {
+        /// The name of the tag to add.
+        #[clap(long)]
+        name: String,
+        /// The feed(s) to add the tag to.
+        feeds: Vec<String>,
+    },
     /// Search RSS store content (titles, authors, page content) with grep.
     Search { query: String },
     /// Display the current configuration file.
-    Config {},
+    Config,
 }
 
 /// Main entry point.
@@ -53,7 +59,7 @@ fn main() -> Result<()> {
     db.init_feed_table()?;
 
     match args.command {
-        Some(Command::Config {}) => {
+        Some(Command::Config) => {
             match toml::to_string_pretty(&cfg) {
                 Ok(s) => println!("{}", s),
                 Err(e) => eprintln!("{}", e),

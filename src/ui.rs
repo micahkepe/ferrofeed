@@ -9,7 +9,10 @@ use ratatui::{
     widgets::{Block, Clear, Paragraph, Wrap},
 };
 
-use crate::ui::popup::{PopupState, get_centered_popup_area, pad_top_lines_center};
+use crate::{
+    db::Feed,
+    ui::popup::{PopupState, get_centered_popup_area, pad_top_lines_center},
+};
 
 pub mod popup;
 
@@ -29,9 +32,12 @@ pub struct App {
 #[derive(Debug)]
 enum CurrentScreen {
     /// The home library page.
-    ViewFeedsPage,
+    ViewFeedsPage {
+        feeds: Option<Vec<Feed>>,
+        selected_feed: Option<Feed>,
+    },
     /// Viewing a selected post
-    PostView,
+    PostView { url: String },
 }
 
 /// Initialize the TUI.
@@ -52,7 +58,10 @@ impl App {
         Self {
             running: true,
             popup: None,
-            current_page: CurrentScreen::ViewFeedsPage,
+            current_page: CurrentScreen::ViewFeedsPage {
+                feeds: None,
+                selected_feed: None,
+            },
         }
     }
 
@@ -152,6 +161,8 @@ impl App {
                         Span::raw(" / "),
                         Span::styled("j", key_style),
                     ]),
+                    Line::from(vec![Span::raw("To Top: "), Span::styled("g", key_style)]),
+                    Line::from(vec![Span::raw("To Bottom: "), Span::styled("G", key_style)]),
                     Line::from(vec![
                         Span::raw("Toggle Help: "),
                         Span::styled("?", key_style),
