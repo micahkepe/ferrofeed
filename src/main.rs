@@ -2,10 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use ferrofeed::{
-    config::{self},
-    db, ui,
-};
+use ferrofeed::{commands, config, db, ui};
 
 #[derive(Parser)]
 struct Args {
@@ -44,7 +41,8 @@ enum Command {
 }
 
 /// Main entry point.
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Parse user config, if it exists
@@ -60,6 +58,10 @@ fn main() -> Result<()> {
     db.init_feed_item_table()?;
 
     match args.command {
+        Some(Command::AddFeed { url }) => commands::add_feed(&db, &url).await,
+        Some(Command::RemoveFeed { url }) => commands::remove_feed(&db, &url),
+        Some(Command::List) => commands::list_feeds(&db),
+        Some(Command::Sync) => commands::sync_feeds(&db).await,
         Some(Command::Config) => {
             match toml::to_string_pretty(&cfg) {
                 Ok(s) => println!("{}", s),
@@ -68,8 +70,9 @@ fn main() -> Result<()> {
             Ok(())
         }
         Some(_) => {
-            // Handle subcommands
-            todo!()
+            // Handle remaining subcommands
+            println!("Command not yet implemented");
+            Ok(())
         }
         None => {
             // Open TUI

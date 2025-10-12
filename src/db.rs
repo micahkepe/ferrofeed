@@ -107,6 +107,14 @@ impl Db {
         Ok(())
     }
 
+    /// Remove a feed by URL. Returns true if a feed was deleted, false if not found.
+    pub fn remove_feed(&self, url: &str) -> Result<bool> {
+        let rows_affected = self
+            .conn
+            .execute("DELETE FROM feed WHERE url = ?1", params![url])?;
+        Ok(rows_affected > 0)
+    }
+
     /// List the feeds in the database.
     pub fn list_feeds(&self) -> Result<Vec<Feed>> {
         let mut stmt = self
@@ -128,6 +136,7 @@ impl Db {
     }
 
     /// Add a feed item to the database. Uses INSERT OR IGNORE to skip duplicates.
+    /// Returns true if the item was inserted, false if it was a duplicate.
     pub fn add_feed_item(
         &self,
         feed_id: usize,
@@ -136,14 +145,14 @@ impl Db {
         description: Option<&str>,
         author: Option<&str>,
         published: Option<i64>,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         let now = OffsetDateTime::now_utc().unix_timestamp();
-        self.conn.execute(
+        let rows_affected = self.conn.execute(
             "INSERT OR IGNORE INTO feed_item (feed_id, title, link, description, author, published, is_read, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7)",
             params![feed_id, title, link, description, author, published, now],
         )?;
-        Ok(())
+        Ok(rows_affected > 0)
     }
 
     /// Get all items for a specific feed.
@@ -152,7 +161,7 @@ impl Db {
             "SELECT id, feed_id, title, link, description, author, published, is_read, created_at
              FROM feed_item
              WHERE feed_id = ?1
-             ORDER BY published DESC"
+             ORDER BY published DESC",
         )?;
         let rows = stmt.query_map(params![feed_id], |row| {
             Ok(FeedItem {
