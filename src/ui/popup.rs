@@ -3,10 +3,14 @@ use ratatui::{
     text::Line,
 };
 /// Represents potential popups
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PopupState {
     /// The help menu popup.
     Help,
+    /// Input popup for adding a feed.
+    AddFeed { input: String },
+    /// Confirmation popup for deleting a feed.
+    DeleteFeed { feed_url: String },
 }
 
 /// Helper function to create a centered rect using up certain percentage of the available rect

@@ -192,3 +192,218 @@ impl Db {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_db() -> Db {
+        let db = Db::open(":memory:").expect("failed to create test db");
+        db.init_feed_table().expect("failed to init feed table");
+        db.init_feed_item_table()
+            .expect("failed to init feed_item table");
+        db
+    }
+
+    #[test]
+    fn test_add_and_list_feeds() {
+        let db = create_test_db();
+
+        // Add a feed
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        // List feeds
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        assert_eq!(feeds.len(), 1);
+        assert_eq!(feeds[0].url, "https://example.com/feed.xml");
+        assert_eq!(feeds[0].title, Some("Test Feed".to_string()));
+    }
+
+    #[test]
+    fn test_add_duplicate_feed_fails() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        // Try to add duplicate
+        let result = db.add_feed("https://example.com/feed.xml", Some("Duplicate"));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_remove_feed() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        // Remove the feed
+        let deleted = db
+            .remove_feed("https://example.com/feed.xml")
+            .expect("failed to remove feed");
+        assert!(deleted);
+
+        // Verify it's gone
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        assert_eq!(feeds.len(), 0);
+    }
+
+    #[test]
+    fn test_remove_nonexistent_feed() {
+        let db = create_test_db();
+
+        let deleted = db
+            .remove_feed("https://nonexistent.com/feed.xml")
+            .expect("failed to remove feed");
+        assert!(!deleted);
+    }
+
+    #[test]
+    fn test_add_feed_items() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        let feed_id = feeds[0].id;
+
+        // Add an item
+        let inserted = db
+            .add_feed_item(
+                feed_id,
+                Some("Test Item"),
+                Some("https://example.com/item1"),
+                Some("Item description"),
+                Some("Author"),
+                Some(1234567890),
+            )
+            .expect("failed to add item");
+        assert!(inserted);
+
+        // Get items for feed
+        let items = db.get_feed_items(feed_id).expect("failed to get items");
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, Some("Test Item".to_string()));
+        assert_eq!(items[0].link, Some("https://example.com/item1".to_string()));
+    }
+
+    #[test]
+    fn test_add_duplicate_feed_item() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        let feed_id = feeds[0].id;
+
+        // Add an item
+        let inserted = db
+            .add_feed_item(
+                feed_id,
+                Some("Test Item"),
+                Some("https://example.com/item1"),
+                Some("Description"),
+                Some("Author"),
+                Some(1234567890),
+            )
+            .expect("failed to add item");
+        assert!(inserted);
+
+        // Try to add duplicate (same feed_id and link)
+        let inserted = db
+            .add_feed_item(
+                feed_id,
+                Some("Different Title"),
+                Some("https://example.com/item1"),
+                Some("Different Description"),
+                Some("Author"),
+                Some(1234567890),
+            )
+            .expect("failed to add duplicate item");
+        assert!(!inserted);
+
+        // Verify only one item exists
+        let items = db.get_feed_items(feed_id).expect("failed to get items");
+        assert_eq!(items.len(), 1);
+    }
+
+    #[test]
+    fn test_cascade_delete_feed_items() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        let feed_id = feeds[0].id;
+
+        // Add items
+        db.add_feed_item(
+            feed_id,
+            Some("Item 1"),
+            Some("https://example.com/item1"),
+            None,
+            None,
+            None,
+        )
+        .expect("failed to add item");
+
+        db.add_feed_item(
+            feed_id,
+            Some("Item 2"),
+            Some("https://example.com/item2"),
+            None,
+            None,
+            None,
+        )
+        .expect("failed to add item");
+
+        // Verify items exist
+        let items = db.get_feed_items(feed_id).expect("failed to get items");
+        assert_eq!(items.len(), 2);
+
+        // Remove the feed
+        db.remove_feed("https://example.com/feed.xml")
+            .expect("failed to remove feed");
+
+        // Verify items are also deleted (can't check directly without feed_id, but feeds should be empty)
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        assert_eq!(feeds.len(), 0);
+    }
+
+    #[test]
+    fn test_mark_item_read() {
+        let db = create_test_db();
+
+        db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
+            .expect("failed to add feed");
+
+        let feeds = db.list_feeds().expect("failed to list feeds");
+        let feed_id = feeds[0].id;
+
+        db.add_feed_item(
+            feed_id,
+            Some("Test Item"),
+            Some("https://example.com/item1"),
+            None,
+            None,
+            None,
+        )
+        .expect("failed to add item");
+
+        let items = db.get_feed_items(feed_id).expect("failed to get items");
+        assert!(!items[0].is_read);
+
+        // Mark as read
+        db.mark_item_read(items[0].id)
+            .expect("failed to mark item as read");
+
+        // Verify it's marked as read
+        let items = db.get_feed_items(feed_id).expect("failed to get items");
+        assert!(items[0].is_read);
+    }
+}

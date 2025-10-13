@@ -17,9 +17,15 @@ struct Args {
 #[derive(Subcommand)]
 enum Command {
     /// Add a feed to the RSS store.
-    AddFeed { url: String },
+    AddFeed {
+        /// The URL of the RSS/Atom resource.
+        url: String,
+    },
     /// Remove a feed from the RSS store.
-    RemoveFeed { url: String },
+    RemoveFeed {
+        /// The URL of the RSS/Atom resource.
+        url: String,
+    },
     /// List current feeds in the RSS store.
     List,
     /// Manually trigger sync across RSS feeds.
@@ -35,7 +41,10 @@ enum Command {
         feeds: Vec<String>,
     },
     /// Search RSS store content (titles, authors, page content) with grep.
-    Search { query: String },
+    Search {
+        /// Pattern to match
+        query: String,
+    },
     /// Display the current configuration file.
     Config,
 }
@@ -76,7 +85,7 @@ async fn main() -> Result<()> {
         }
         None => {
             // Open TUI
-            ui::init()
+            ui::init(&db)
         }
     }
 }

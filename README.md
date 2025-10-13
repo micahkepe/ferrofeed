@@ -8,7 +8,7 @@ A RSS CLI and TUI for managing, viewing, and exporting
 
 ## Usage
 
-```
+```text
 Usage: ferrofeed [OPTIONS] [COMMAND]
 
 Commands:
