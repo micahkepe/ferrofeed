@@ -1,6 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::process::Stdio;
+use std::{path::PathBuf, process};
+use tokio::{io::AsyncWriteExt, process::Command as TokioCommand};
 
 use ferrofeed::{commands, config, db, ui};
 
@@ -40,7 +42,7 @@ enum Command {
         /// The feed(s) to add the tag to.
         feeds: Vec<String>,
     },
-    /// Search RSS store content (titles, authors, page content) with grep.
+    /// Search RSS store content (titles, authors, page content) with ripgrep.
     Search {
         /// Pattern to match
         query: String,
@@ -72,10 +74,25 @@ async fn main() -> Result<()> {
         Some(Command::List) => commands::list_feeds(&db),
         Some(Command::Sync) => commands::sync_feeds(&db).await,
         Some(Command::Config) => {
-            match toml::to_string_pretty(&cfg) {
-                Ok(s) => println!("{}", s),
-                Err(e) => eprintln!("{}", e),
+            let conf = match toml::to_string_pretty(&cfg) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    process::exit(1)
+                }
+            };
+
+            // Pipe to `less`; (basically: `cat config.toml | less`)
+            let mut child = TokioCommand::new("less")
+                .stdin(Stdio::piped())
+                .spawn()
+                .expect("failed to spawn less");
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(conf.as_bytes()).await?;
             }
+            // Wait for less to exit
+            child.wait().await?;
+
             Ok(())
         }
         Some(_) => {
