@@ -35,3 +35,5 @@ Options:
 - [ ] Support "go to external" mapping (similar to `gx` in Vim) when in post to
       go to original
 - [ ] Search over posts via `ripgrep`
+- [ ] OPML import/export support
+  - [OPML specification](https://opml.org/spec2.opml)
