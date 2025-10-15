@@ -62,6 +62,8 @@ async fn main() -> Result<()> {
     // Load/create database and associated tables
     let db = db::Db::open(
         cfg.database_path
+            .as_ref()
+            .expect("no database name or default")
             .to_str()
             .expect("no database path specified"),
     )?;

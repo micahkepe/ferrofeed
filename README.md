@@ -29,9 +29,9 @@ Options:
 
 ## TODOs
 
-- [ ] Rich HTML text display with [`html2text`](https://crates.io/crates/html2text)
 - [ ] Support `schedule` subcommand for running background sync cronjob
-  - [ ] Configurable schedule (default to 60 minute)
+  - [ ] Configurable schedule (default to every 60 minutes)
+- [ ] Rich HTML text display with [`html2text`](https://crates.io/crates/html2text)
 - [ ] Support "go to external" mapping (similar to `gx` in Vim) when in post to
       go to original
 - [ ] Search over posts via `ripgrep`

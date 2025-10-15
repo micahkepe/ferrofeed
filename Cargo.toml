@@ -2,9 +2,14 @@
 name = "ferrofeed"
 version = "0.1.0"
 authors = ["Micah Kepe <micahkepe@gmail.com>"]
+description = """
+A RSS CLI and TUI for managing, viewing, and exporting RSS/Atom feeds.
+"""
 edition = "2024"
 readme = "README.md"
 license = "MIT"
+homepage = "https://github.com/micahkepe/ferrofeed"
+repository = "https://github.com/micahkepe/ferrofeed"
 
 [dependencies]
 anyhow = "1.0.99"
@@ -19,3 +24,4 @@ toml = "0.9.7"
 serde = { version = "1.0.226", features = ["derive"] }
 directories = "6.0.0"
 feed-rs = "2.3.1"
+ripgrep = "14.1.1"

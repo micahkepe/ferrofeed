@@ -1,8 +1,7 @@
+use anyhow::{Context, Result};
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
-
-use anyhow::{Context, Result};
 
 /// The default app config TOML file.
 const APP_CONFIG_FILE: &str = "ferrofeed.toml";
@@ -13,7 +12,11 @@ const DEFAULT_DB_NAME: &str = "ferrofeed.db";
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Path to the ferrofeed database file
-    pub database_path: PathBuf,
+    pub database_path: Option<PathBuf>,
+    /// Whether to sync feeds in background,
+    pub allow_background_sync: Option<bool>,
+    /// Schedule for when to sync feeds in database.
+    pub sync_schedule_mins: Option<usize>,
 }
 
 impl Default for Config {
@@ -21,7 +24,9 @@ impl Default for Config {
         let base_dirs = BaseDirs::new().expect("couldn't get base directories, HOME not set?");
         let data_dir = base_dirs.home_dir().join(".local/share/ferrofeed");
         Self {
-            database_path: data_dir.join(DEFAULT_DB_NAME),
+            database_path: Some(data_dir.join(DEFAULT_DB_NAME)),
+            allow_background_sync: Some(false),
+            sync_schedule_mins: Some(60),
         }
     }
 }
