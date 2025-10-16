@@ -13,10 +13,26 @@ const DEFAULT_DB_NAME: &str = "ferrofeed.db";
 pub struct Config {
     /// Path to the ferrofeed database file
     pub database_path: Option<PathBuf>,
+    /// Sync section of the config file.
+    pub sync: SyncConfig,
+}
+
+/// Sync section of the config file.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SyncConfig {
     /// Whether to sync feeds in background,
-    pub allow_background_sync: Option<bool>,
+    pub allow_background_sync: bool,
     /// Schedule for when to sync feeds in database.
-    pub sync_schedule_mins: Option<usize>,
+    pub schedule_mins: usize,
+}
+
+impl Default for SyncConfig {
+    fn default() -> Self {
+        Self {
+            allow_background_sync: false,
+            schedule_mins: 60,
+        }
+    }
 }
 
 impl Default for Config {
@@ -25,8 +41,7 @@ impl Default for Config {
         let data_dir = base_dirs.home_dir().join(".local/share/ferrofeed");
         Self {
             database_path: Some(data_dir.join(DEFAULT_DB_NAME)),
-            allow_background_sync: Some(false),
-            sync_schedule_mins: Some(60),
+            sync: SyncConfig::default(),
         }
     }
 }

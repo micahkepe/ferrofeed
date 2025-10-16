@@ -1,12 +1,14 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 use std::process::Stdio;
-use std::{path::PathBuf, process};
 use tokio::{io::AsyncWriteExt, process::Command as TokioCommand};
 
 use ferrofeed::{commands, config, db, ui};
 
+/// A RSS CLI and TUI for managing, viewing, and exporting RSS/Atom feeds.
 #[derive(Parser)]
+#[command(version, about, long_about = None)]
 struct Args {
     /// Run with a specified configuration file.
     #[clap(short = 'c', long)]
@@ -49,6 +51,12 @@ enum Command {
     },
     /// Display the current configuration file.
     Config,
+    /// Schedule sync command to run on a schedule.
+    Schedule {
+        /// Minutes to run sync command, valid range is 1..=60
+        #[clap(short = 'm', long, default_value_t = 60, value_name = "MINUTES")]
+        minutes: u32,
+    },
 }
 
 /// Main entry point.
@@ -78,10 +86,7 @@ async fn main() -> Result<()> {
         Some(Command::Config) => {
             let conf = match toml::to_string_pretty(&cfg) {
                 Ok(s) => s,
-                Err(e) => {
-                    eprintln!("{}", e);
-                    process::exit(1)
-                }
+                Err(e) => return Err(anyhow::anyhow!(e)),
             };
 
             // Pipe to `less`; (basically: `cat config.toml | less`)
@@ -97,10 +102,10 @@ async fn main() -> Result<()> {
 
             Ok(())
         }
+        Some(Command::Schedule { minutes }) => Ok(commands::schedule(minutes).await?),
         Some(_) => {
-            // Handle remaining subcommands
-            println!("Command not yet implemented");
-            Ok(())
+            // TODO: Handle remaining subcommands
+            unimplemented!()
         }
         None => {
             // Open TUI
