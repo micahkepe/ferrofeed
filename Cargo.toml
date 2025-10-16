@@ -29,3 +29,4 @@ serde = { version = "1.0.226", features = ["derive"] }
 directories = "6.0.0"
 feed-rs = "2.3.1"
 grep = "0.3.2"
+html2text = "0.15.5"

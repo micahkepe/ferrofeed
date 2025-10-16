@@ -39,7 +39,7 @@ Options:
   - [ ] Respect user's config
 - [ ] Search over posts via `ripgrep` library/ SQL search
   - [ ] '/' key to search
-- [ ] Rich HTML text display with [`html2text`](https://crates.io/crates/html2text)
+- [x] Rich HTML text display with [`html2text`](https://crates.io/crates/html2text)
 - [ ] Support "go to external" mapping (similar to `gx` in Vim) when in post to
       go to original
 - [ ] Fetch whole post contents (not just until `<-- more! -->` tag)

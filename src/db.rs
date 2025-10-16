@@ -1,7 +1,6 @@
-use std::fs;
-
 use anyhow::Result;
 use rusqlite::{Connection, params};
+use std::fs;
 use time::OffsetDateTime;
 
 /// Represents a feed entry in the `feed` table.

@@ -363,8 +363,14 @@ impl<'a> App<'a> {
         lines.push(Line::from(""));
 
         if let Some(desc) = &item.description {
-            for line in desc.lines() {
-                lines.push(Line::from(vec![line.into()]));
+            // NOTE: no wrapping, delegate to `ratatui`
+            match html2text::from_read(desc.as_bytes(), usize::MAX) {
+                Ok(plain_text) => {
+                    lines.extend(plain_text.lines().map(|line| Line::from(line.to_string())));
+                }
+                Err(_) => {
+                    lines.push(Line::from("No description available.".italic()));
+                }
             }
         } else {
             lines.push(Line::from("No description available.".italic()));
