@@ -14,7 +14,7 @@ use ratatui::{
 
 use crate::{
     db::{Db, Feed, FeedItem},
-    ui::popup::{PopupState, get_centered_popup_area},
+    ui::popup::{PopupState, get_centered_popup_area, pad_top_lines_center},
 };
 
 pub mod popup;
@@ -171,16 +171,22 @@ impl<'a> App<'a> {
         ]);
 
         if feeds.is_empty() {
-            let text = "🦀 Looks like your feed list is feeling a bit... empty!\n\n\
-                        No worries though! Here's how to fill it up:\n\n\
-                        📡 Add a feed from the command line:\n\
-                           $ ferrofeed add-feed <url>\n\n\
-                        ⌨️  Or press 'a' right here to add one!\n\n\
-                        💡 Try adding a popular feed like:\n\
-                           https://blog.rust-lang.org/feed.xml\n\
-                           https://this-week-in-rust.org/rss.xml";
+            let mut lines: Vec<Line> = vec![
+                Line::from("🦀 Looks like your feed list is feeling a bit... empty!"),
+                Line::from("No worries though! Here's how to fill it up:"),
+                Line::from(""),
+                Line::from("📡 Add a feed from the command line:"),
+                Line::from("$ ferrofeed add-feed <url>".fg(Color::Yellow)),
+                Line::from(""),
+                Line::from("⌨️  Or press 'a' right here to add one!"),
+                Line::from("💡 Try adding a popular feed like:"),
+                Line::from("https://blog.rust-lang.org/feed.xml").fg(Color::Yellow),
+                Line::from("https://this-week-in-rust.org/rss.xml").fg(Color::Yellow),
+            ];
+            lines = pad_top_lines_center(lines, frame.area(), true);
+
             frame.render_widget(
-                Paragraph::new(text)
+                Paragraph::new(lines)
                     .block(
                         Block::bordered()
                             .title(title)
@@ -197,10 +203,10 @@ impl<'a> App<'a> {
             .iter()
             .map(|feed| {
                 let title = feed.title.as_deref().unwrap_or("(no title)");
-                ListItem::new(Line::from(vec![
-                    Span::raw(format!("[{}] ", feed.id)),
-                    Span::styled(title, Style::default().fg(Color::Cyan)),
-                ]))
+                ListItem::new(Line::from(vec![Span::styled(
+                    title,
+                    Style::default().fg(Color::Cyan),
+                )]))
             })
             .collect();
 
@@ -783,7 +789,7 @@ impl<'a> App<'a> {
                 // Display input with cursor
                 let input_with_cursor = format!("{}█", input);
 
-                let lines = vec![
+                let mut lines = vec![
                     Line::from("Enter feed URL:"),
                     Line::from(""),
                     Line::from(vec![Span::styled(
@@ -793,9 +799,8 @@ impl<'a> App<'a> {
                     Line::from(""),
                     Line::from("Press Enter to add, Esc to cancel."),
                     Line::from(""),
-                    Line::from("Note: Adding feeds in TUI is experimental."),
-                    Line::from("For best results, use: ferrofeed add-feed <url>"),
                 ];
+                lines = pad_top_lines_center(lines, popup_area, true);
 
                 frame.render_widget(Clear, popup_area);
                 frame.render_widget(
@@ -807,12 +812,13 @@ impl<'a> App<'a> {
             }
             PopupState::DeleteFeed { feed_url } => {
                 let popup_area = get_centered_popup_area(area, 60, 30);
-                let text = format!(
-                    "Are you sure you want to delete this feed?\n\n\
-                    {}\n\n\
-                    This will also delete all items from this feed.",
-                    feed_url
-                );
+                let mut lines = vec![
+                    Line::from("Are you sure you want to delete this feed?"),
+                    Line::from(vec![">> ".into(), feed_url.as_str().fg(Color::Yellow)]),
+                    Line::from(""),
+                    Line::from("This will also delete all items from this feed."),
+                ];
+                lines = pad_top_lines_center(lines, popup_area, true);
 
                 let buttons = Line::from(vec![
                     " ".into(),
@@ -832,7 +838,7 @@ impl<'a> App<'a> {
 
                 frame.render_widget(Clear, popup_area);
                 frame.render_widget(
-                    Paragraph::new(text)
+                    Paragraph::new(lines)
                         .block(
                             Block::bordered()
                                 .title(" Confirm Delete ".red())

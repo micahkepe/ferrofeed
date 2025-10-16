@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Parse user config, if it exists
-    let cfg = config::Config::load(args.config_path.clone())?;
+    let cfg = config::Config::load(args.config_path)?;
 
     // Load/create database and associated tables
     let db = db::Db::open(

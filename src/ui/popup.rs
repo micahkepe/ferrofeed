@@ -2,6 +2,7 @@ use ratatui::{
     layout::{Constraint, Flex, Layout, Rect},
     text::Line,
 };
+
 /// Represents potential popups
 #[derive(Debug, Clone)]
 pub enum PopupState {
@@ -41,6 +42,6 @@ pub(crate) fn pad_top_lines_center(
     let top_padding = (available_height.saturating_sub(total_lines as u16)) / 2;
     let mut padded_lines = Vec::new();
     padded_lines.extend(std::iter::repeat_n(Line::from(""), top_padding as usize));
-    padded_lines.extend(lines.clone());
+    padded_lines.extend(lines);
     padded_lines
 }
