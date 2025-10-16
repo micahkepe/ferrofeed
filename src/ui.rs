@@ -333,33 +333,45 @@ impl<'a> App<'a> {
         ]);
 
         // Build content
-        let mut content = String::new();
+        let mut lines: Vec<Line> = Vec::new();
 
         if let Some(link) = &item.link {
-            content.push_str(&format!("Link: {}\n\n", link));
+            lines.push(Line::from(vec!["Link: ".fg(Color::Yellow), link.into()]));
         }
 
         if let Some(author) = &item.author {
-            content.push_str(&format!("Author: {}\n\n", author));
+            lines.push(Line::from(vec![
+                "Author: ".fg(Color::Yellow),
+                author.into(),
+            ]));
         }
 
         if let Some(published) = item.published {
             use time::OffsetDateTime;
             if let Ok(dt) = OffsetDateTime::from_unix_timestamp(published) {
                 let formatted = format!("{:04}-{:02}-{:02}", dt.year(), dt.month() as u8, dt.day());
-                content.push_str(&format!("Published: {}\n\n", formatted));
+                lines.push(Line::from(vec![
+                    "Published: ".fg(Color::Yellow),
+                    formatted.into(),
+                ]));
+            } else {
+                lines.push(Line::from("N/A".italic()));
             }
         }
 
+        // Separator
+        lines.push(Line::from(""));
+
         if let Some(desc) = &item.description {
-            content.push_str("Description:\n");
-            content.push_str(desc);
+            for line in desc.lines() {
+                lines.push(Line::from(vec![line.into()]));
+            }
         } else {
-            content.push_str("No description available.");
+            lines.push(Line::from("No description available.".italic()));
         }
 
         frame.render_widget(
-            Paragraph::new(content)
+            Paragraph::new(lines)
                 .block(
                     Block::bordered()
                         .title(title)
