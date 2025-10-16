@@ -59,7 +59,7 @@ pub async fn fetch_feed(url: &str) -> Result<ParsedFeed> {
             });
 
             // Get author name
-            let author = entry.authors.first().map(|a| a.name.clone());
+            let author = entry.authors.first().map(|a| a.name.trim().to_string());
 
             // Get published date as Unix timestamp
             let published = entry.published.or(entry.updated).map(|dt| dt.timestamp());
