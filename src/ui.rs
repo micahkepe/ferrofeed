@@ -402,6 +402,9 @@ impl<'a> App<'a> {
                         KeyCode::Char('G') => {
                             self.help_scroll = u16::MAX; // Will be clamped by rendering
                         }
+                        KeyCode::Char('q') => {
+                            self.quit();
+                        }
                         _ => {}
                     }
                 }
@@ -676,9 +679,11 @@ impl<'a> App<'a> {
             PopupState::Help => {
                 let popup_area = get_centered_popup_area(area, 50, 60);
                 let key_style = Style::default().fg(Color::Blue).bold();
+                let section_title =
+                    |title: &str| Line::from(format!("{}:", title).bold().bg(Color::DarkGray));
                 let lines = vec![
                     // Navigation
-                    Line::from("Navigation:".bold()),
+                    section_title("Navigation"),
                     Line::from(vec![
                         Span::raw("  Move Up: "),
                         Span::styled("↑", key_style),
@@ -698,7 +703,7 @@ impl<'a> App<'a> {
                     ]),
                     Line::from(""),
                     // Actions
-                    Line::from("Actions:".bold()),
+                    section_title("Actions"),
                     Line::from(vec![
                         Span::raw("  Select: "),
                         Span::styled("Enter", key_style),
@@ -719,7 +724,7 @@ impl<'a> App<'a> {
                     ]),
                     Line::from(""),
                     // Other
-                    Line::from("Other:"),
+                    section_title("Other"),
                     Line::from(vec![
                         Span::raw("  Toggle Help: "),
                         Span::styled("?", key_style),
@@ -727,7 +732,12 @@ impl<'a> App<'a> {
                     Line::from(vec![Span::raw("  Quit: "), Span::styled("q", key_style)]),
                 ];
 
-                let quit_instruction = Line::from(vec![" Exit Help: ".into(), "? ".blue()]);
+                let quit_instruction = Line::from(vec![
+                    " Exit Help: ".into(),
+                    Span::styled("<ESC>", key_style),
+                    Span::raw(" / "),
+                    Span::styled("? ", key_style),
+                ]);
 
                 // Calculate scrollbar state
                 let total_lines = lines.len();
