@@ -340,7 +340,13 @@ impl<'a> App<'a> {
         let mut lines: Vec<Line> = Vec::new();
 
         if let Some(link) = &item.link {
-            lines.push(Line::from(vec!["Link: ".fg(Color::Yellow), link.into()]));
+            lines.push(Line::from(vec![
+                "Link: ".fg(Color::Yellow),
+                Span::styled(
+                    link.as_str(),
+                    Style::default().underlined().underline_color(Color::Cyan),
+                ),
+            ]));
         }
 
         if let Some(author) = &item.author {
