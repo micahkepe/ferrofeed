@@ -1,5 +1,6 @@
 //! Provides an adapter for `html2text` to `ratatui` rich text.
 use anyhow::{Context, Result};
+use html_escape::decode_html_entities;
 use html2text::render::{RichAnnotation, TaggedLine};
 use ratatui::{
     style::{Color, Modifier, Style},
@@ -11,6 +12,7 @@ use ratatui::{
 /// This is a simple adapter to convert the rich annotations from `html2text` to
 /// `ratatui` rich text.
 pub fn html_to_rich_text(html: &str) -> Result<Vec<Line<'_>>> {
+    let html = decode_html_entities(html);
     let tagged_lines = html2text::from_read_rich(html.as_bytes(), usize::MAX)
         .context("failed to get html2text RichAnnotations")?;
     Ok(tagged_lines.into_iter().map(tagged_line_to_line).collect())
@@ -70,5 +72,16 @@ mod tests {
             Style::default().add_modifier(Modifier::ITALIC),
         )])];
         assert_eq!(html_to_rich_text(html).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_double_encoded_html() {
+        let double_encoded = r#"&lt;p&gt;This is &lt;strong&gt;bold&lt;/strong&gt; text&lt;/p&gt;"#;
+        let lines = html_to_rich_text(double_encoded).unwrap();
+        assert!(!lines.is_empty());
+
+        // The text should not contain &lt; or &gt;
+        let text = format!("{:?}", lines);
+        assert!(!text.contains("&lt;"));
     }
 }
