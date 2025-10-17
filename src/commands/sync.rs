@@ -26,13 +26,16 @@ pub async fn sync_feeds(db: &Db) -> Result<()> {
                 let mut new_items = 0;
 
                 for item in parsed_feed.items {
+                    // Convert Vec<String> to Vec<&str> for add_feed_item
+                    let authors_refs: Vec<&str> = item.authors.iter().map(|s| s.as_str()).collect();
+
                     // add_feed_item returns true if inserted, false if duplicate
                     match db.add_feed_item(
                         feed.id,
                         item.title.as_deref(),
                         item.link.as_deref(),
                         item.description.as_deref(),
-                        item.author.as_deref(),
+                        Some(&authors_refs),
                         item.published,
                     ) {
                         Ok(true) => new_items += 1,

@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         let item = &feed.items[0];
         println!("  Title: {:?}", item.title);
         println!("  Link: {:?}", item.link);
-        println!("  Author: {:?}", item.author);
+        println!("  Author: {:?}", item.authors);
         println!("  Published: {:?}", item.published);
     }
 

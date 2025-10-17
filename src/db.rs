@@ -29,8 +29,8 @@ pub struct FeedItem {
     pub link: Option<String>,
     /// Description or summary of the item.
     pub description: Option<String>,
-    /// The author of the item.
-    pub author: Option<String>,
+    /// The authors of the item.
+    pub authors: Vec<String>,
     /// Published date (Unix timestamp).
     pub published: Option<i64>,
     /// Whether the item has been read.
@@ -84,7 +84,7 @@ impl Db {
                 title TEXT,
                 link TEXT,
                 description TEXT,
-                author TEXT,
+                authors TEXT,
                 published INTEGER,
                 is_read INTEGER NOT NULL DEFAULT 0,
                 created_at INTEGER NOT NULL,
@@ -142,34 +142,42 @@ impl Db {
         title: Option<&str>,
         link: Option<&str>,
         description: Option<&str>,
-        author: Option<&str>,
+        authors: Option<&[&str]>,
         published: Option<i64>,
     ) -> Result<bool> {
         let now = OffsetDateTime::now_utc().unix_timestamp();
+        let authors_str = authors.map(|a| a.join(", "));
+
         let rows_affected = self.conn.execute(
-            "INSERT OR IGNORE INTO feed_item (feed_id, title, link, description, author, published, is_read, created_at)
+            "INSERT OR IGNORE INTO feed_item (feed_id, title, link, description, authors, published, is_read, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7)",
-            params![feed_id, title, link, description, author, published, now],
+            params![feed_id, title, link, description, authors_str, published, now],
         )?;
+
         Ok(rows_affected > 0)
     }
 
     /// Get all items for a specific feed.
     pub fn get_feed_items(&self, feed_id: usize) -> Result<Vec<FeedItem>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, feed_id, title, link, description, author, published, is_read, created_at
+            "SELECT id, feed_id, title, link, description, authors, published, is_read, created_at
              FROM feed_item
              WHERE feed_id = ?1
              ORDER BY published DESC",
         )?;
         let rows = stmt.query_map(params![feed_id], |row| {
+            let authors_str: Option<String> = row.get(5)?;
+            let authors = authors_str
+                .map(|s| s.split(", ").map(|a| a.to_string()).collect())
+                .unwrap_or_default();
+
             Ok(FeedItem {
                 id: row.get(0)?,
                 feed_id: row.get(1)?,
                 title: row.get(2)?,
                 link: row.get(3)?,
                 description: row.get(4)?,
-                author: row.get(5)?,
+                authors,
                 published: row.get(6)?,
                 is_read: row.get::<_, i64>(7)? != 0,
                 created_at: row.get(8)?,
@@ -276,7 +284,7 @@ mod tests {
                 Some("Test Item"),
                 Some("https://example.com/item1"),
                 Some("Item description"),
-                Some("Author"),
+                Some(&["Author"]),
                 Some(1234567890),
             )
             .expect("failed to add item");
@@ -306,7 +314,7 @@ mod tests {
                 Some("Test Item"),
                 Some("https://example.com/item1"),
                 Some("Description"),
-                Some("Author"),
+                Some(&["Author"]),
                 Some(1234567890),
             )
             .expect("failed to add item");
@@ -319,7 +327,7 @@ mod tests {
                 Some("Different Title"),
                 Some("https://example.com/item1"),
                 Some("Different Description"),
-                Some("Author"),
+                Some(&["Author"]),
                 Some(1234567890),
             )
             .expect("failed to add duplicate item");

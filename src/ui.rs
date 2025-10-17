@@ -274,11 +274,11 @@ impl<'a> App<'a> {
             .iter()
             .map(|item| {
                 let title = item.title.as_deref().unwrap_or("(no title)");
-                let author = item
-                    .author
-                    .as_deref()
-                    .map(|a| format!(" by {}", a))
-                    .unwrap_or_default();
+                let author = if item.authors.is_empty() {
+                    String::new()
+                } else {
+                    format!(" by {}", item.authors.join(", "))
+                };
 
                 let style = if item.is_read {
                     Style::default().fg(Color::DarkGray)
@@ -349,10 +349,12 @@ impl<'a> App<'a> {
             ]));
         }
 
-        if let Some(author) = &item.author {
+        if !item.authors.is_empty() {
             lines.push(Line::from(vec![
-                "Author: ".fg(Color::Yellow),
-                author.into(),
+                "Author".fg(Color::Yellow),
+                if item.authors.len() > 1 { "s" } else { "" }.fg(Color::Yellow),
+                ": ".fg(Color::Yellow),
+                item.authors.join(", ").into(),
             ]));
         }
 
@@ -983,12 +985,14 @@ impl<'a> App<'a> {
                     {
                         // Add all feed items to the database
                         for item in parsed_feed.items {
+                            let authors_refs: Vec<&str> =
+                                item.authors.iter().map(|s| s.as_str()).collect();
                             let _ = self.db.add_feed_item(
                                 feed.id,
                                 item.title.as_deref(),
                                 item.link.as_deref(),
                                 item.description.as_deref(),
-                                item.author.as_deref(),
+                                Some(&authors_refs),
                                 item.published,
                             );
                         }

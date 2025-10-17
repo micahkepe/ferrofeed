@@ -21,8 +21,8 @@ pub struct ParsedFeedItem {
     pub link: Option<String>,
     /// The description/summary.
     pub description: Option<String>,
-    /// The author.
-    pub author: Option<String>,
+    /// The author(s).
+    pub authors: Vec<String>,
     /// Published date as Unix timestamp.
     pub published: Option<i64>,
 }
@@ -59,7 +59,11 @@ pub async fn fetch_feed(url: &str) -> Result<ParsedFeed> {
             });
 
             // Get author name
-            let author = entry.authors.first().map(|a| a.name.trim().to_string());
+            let authors = entry
+                .authors
+                .iter()
+                .map(|a| a.name.trim().to_string())
+                .collect();
 
             // Get published date as Unix timestamp
             let published = entry.published.or(entry.updated).map(|dt| dt.timestamp());
@@ -68,7 +72,7 @@ pub async fn fetch_feed(url: &str) -> Result<ParsedFeed> {
                 title: entry.title.map(|t| t.content),
                 link,
                 description,
-                author,
+                authors,
                 published,
             }
         })
