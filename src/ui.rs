@@ -17,7 +17,8 @@ use crate::{
     ui::popup::{PopupState, get_centered_popup_area, pad_top_lines_center},
 };
 
-pub mod popup;
+pub(crate) mod popup;
+pub(crate) mod rich_text;
 
 /// Active TUI state.
 pub struct App<'a> {
@@ -363,14 +364,9 @@ impl<'a> App<'a> {
         lines.push(Line::from(""));
 
         if let Some(desc) = &item.description {
-            // NOTE: no wrapping, delegate to `ratatui`
-            match html2text::from_read(desc.as_bytes(), usize::MAX) {
-                Ok(plain_text) => {
-                    lines.extend(plain_text.lines().map(|line| Line::from(line.to_string())));
-                }
-                Err(_) => {
-                    lines.push(Line::from("No description available.".italic()));
-                }
+            match rich_text::html_to_rich_text(desc) {
+                Ok(styled_lines) => lines.extend(styled_lines),
+                Err(_) => lines.push(Line::from("Error rendering HTML".italic())),
             }
         } else {
             lines.push(Line::from("No description available.".italic()));
