@@ -38,6 +38,8 @@ pub struct App<'a> {
     help_scroll_state: ScrollbarState,
     /// Scroll position for help popup
     help_scroll: u16,
+    /// Scrollbar state for post view
+    post_scroll_state: ScrollbarState,
 }
 
 /// The current page
@@ -85,6 +87,7 @@ impl<'a> App<'a> {
             item_list_state: ListState::default(),
             help_scroll_state: ScrollbarState::default(),
             help_scroll: 0,
+            post_scroll_state: ScrollbarState::default(),
         })
     }
 
@@ -372,6 +375,40 @@ impl<'a> App<'a> {
             lines.push(Line::from("No description available.".italic()));
         }
 
+        let area = frame.area();
+        let viewport_height = area.height.saturating_sub(2); // subtract borders
+        let viewport_width = area.width.saturating_sub(2); // subtract borders
+
+        // Calculate wrapped line count
+        let actual_line_count: usize = lines
+            .iter()
+            .map(|line| {
+                let line_width = line.width();
+                if line_width == 0 {
+                    1 // Empty lines still take one line
+                } else {
+                    // Calculate how many lines this will wrap to
+                    (line_width as u16).div_ceil(viewport_width.max(1)).max(1) as usize
+                }
+            })
+            .sum();
+
+        // Calculate scroll bounds
+        let max_scroll = (actual_line_count as u16).saturating_sub(viewport_height);
+        let clamped_scroll = scroll.min(max_scroll);
+
+        // Update the scroll position in current_page to reflect the clamped value
+        if let CurrentScreen::ViewPost { scroll, .. } = &mut self.current_page {
+            *scroll = clamped_scroll;
+        }
+
+        // Update scrollbar state
+        self.post_scroll_state = self
+            .post_scroll_state
+            .content_length(actual_line_count)
+            .viewport_content_length(viewport_height as usize)
+            .position(clamped_scroll as usize);
+
         frame.render_widget(
             Paragraph::new(lines)
                 .block(
@@ -380,9 +417,15 @@ impl<'a> App<'a> {
                         .title_bottom(instructions.right_aligned()),
                 )
                 .wrap(Wrap { trim: true })
-                .scroll((scroll, 0)),
-            frame.area(),
+                .scroll((clamped_scroll, 0)),
+            area,
         );
+
+        // Render scrollbar if content is longer than viewport
+        if actual_line_count > viewport_height as usize {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+            frame.render_stateful_widget(scrollbar, area, &mut self.post_scroll_state);
+        }
     }
 
     /// Reads the [`crossterm`] events and updates the state of [`App`].
@@ -760,17 +803,31 @@ impl<'a> App<'a> {
                 ]);
 
                 // Calculate scrollbar state
-                let total_lines = lines.len();
-                let visible_lines = popup_area.height.saturating_sub(2) as usize; // subtract borders
+                let viewport_height = popup_area.height.saturating_sub(2) as usize; // subtract borders
+                let viewport_width = popup_area.width.saturating_sub(2); // subtract borders
+
+                // Calculate actual wrapped line count
+                let actual_line_count: usize = lines
+                    .iter()
+                    .map(|line| {
+                        let line_width = line.width();
+                        if line_width == 0 {
+                            1 // Empty lines still take one line
+                        } else {
+                            // Calculate how many lines this will wrap to
+                            (line_width as u16).div_ceil(viewport_width.max(1)).max(1) as usize
+                        }
+                    })
+                    .sum();
 
                 // Clamp scroll position
-                let max_scroll = total_lines.saturating_sub(visible_lines);
+                let max_scroll = actual_line_count.saturating_sub(viewport_height);
                 self.help_scroll = self.help_scroll.min(max_scroll as u16);
 
                 self.help_scroll_state = self
                     .help_scroll_state
-                    .content_length(total_lines)
-                    .viewport_content_length(visible_lines)
+                    .content_length(actual_line_count)
+                    .viewport_content_length(viewport_height)
                     .position(self.help_scroll as usize);
 
                 frame.render_widget(Clear, popup_area);
@@ -788,7 +845,7 @@ impl<'a> App<'a> {
                 frame.render_widget(paragraph, popup_area);
 
                 // Render scrollbar on the right side if content is longer than viewport
-                if total_lines > visible_lines {
+                if actual_line_count > viewport_height {
                     let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
                     frame.render_stateful_widget(
                         scrollbar,
