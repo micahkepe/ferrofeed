@@ -1,3 +1,6 @@
+/*
+ * Main entry point for ferrofeed.
+ */
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -53,7 +56,8 @@ enum Command {
     Config,
     /// Schedule sync command to run on a schedule.
     Schedule {
-        /// Minutes to run sync command, valid range is 1..=60
+        /// Minutes to run sync command, valid range is 1..=1440 (24 hours). Default is 60 minutes,
+        /// or once per hour.
         #[clap(short = 'm', long, default_value_t = 60, value_name = "MINUTES")]
         minutes: u32,
     },
