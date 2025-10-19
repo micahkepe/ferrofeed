@@ -28,10 +28,15 @@ fn minutes_to_crontab_schedule(minutes: u32) -> Result<(String, String)> {
             "Maximum schedule minutes is {}",
             SCHEDULE_MINUTES_RANGE.end()
         )),
-        _ => Err(anyhow::anyhow!(
-            "Invalid schedule minutes, must be between 1 and {}",
-            SCHEDULE_MINUTES_RANGE.end()
-        )),
+        m => {
+            // For non-hourly intervals, use a combination approach
+            let hours = m / 60;
+            let mins = m % 60;
+            Ok((
+                format!("{} */{} * * *", mins, hours),
+                format!("every {} hours and {} minutes", hours, mins),
+            ))
+        }
     }
 }
 
@@ -44,7 +49,7 @@ pub async fn schedule(minutes: u32) -> Result<()> {
 
     // Check that crontab is installed
     let crontab_output = TokioCommand::new("crontab").arg("-l").output().await;
-    let existing_crontab = match crontab_output {
+    let mut existing_crontab = match crontab_output {
         Ok(output) if output.status.success() => String::from_utf8(output.stdout)?,
         Ok(output) => {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -65,8 +70,20 @@ pub async fn schedule(minutes: u32) -> Result<()> {
     // Check if crontab already has a job for ferrofeed
     let matcher = RegexMatcher::new(&sync_command.to_string())?;
     if (matcher.find(existing_crontab.as_bytes())?).is_some() {
-        println!("ferrofeed sync already scheduled, skipping...");
-        return Ok(());
+        println!("ferrofeed sync already scheduled, updating...");
+
+        // Remove existing crontab entries
+        existing_crontab = existing_crontab
+            .lines()
+            .filter(|line| {
+                // filter out lines with matches
+                matcher.find(line.as_bytes()).ok().flatten().is_none()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        if !existing_crontab.is_empty() {
+            existing_crontab.push('\n');
+        }
     }
 
     // Append new crontab entry

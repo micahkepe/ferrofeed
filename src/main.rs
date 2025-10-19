@@ -47,7 +47,7 @@ enum Command {
         /// The feed(s) to add the tag to.
         feeds: Vec<String>,
     },
-    /// Search RSS store content (titles, authors, page content) with ripgrep.
+    /// Search RSS store content (titles, authors, page content)
     Search {
         /// Pattern to match
         query: String,

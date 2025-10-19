@@ -21,7 +21,7 @@ Commands:
   sync         Manually trigger sync across RSS feeds
   export       Export feed(s) as OPML
   tag          Add a tag to feed(s)
-  search       Search RSS store content (titles, authors, page content) with ripgrep
+  search       Search RSS store content (titles, authors, page content)
   config       Display the current configuration file
   schedule     Schedule sync command to run on a schedule
   help         Print this message or the help of the given subcommand(s)
@@ -31,3 +31,8 @@ Options:
   -h, --help                       Print help
   -V, --version                    Print version
 ```
+
+## License
+
+This repository is licensed under an MIT License. See [LICENSE](./LICENSE) for
+more details.
