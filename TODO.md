@@ -14,4 +14,8 @@
 - [ ] Sync feeds key binding (default to `s`)
 - [ ] Logging file
 - [ ] Read/unread indicators
-- [ ] `<Space>`/ `Shift` + `<Space>` for page scrolling
+- [x] `<Space>`/ `Backspace` for page scrolling
+  - Tried `Shift` + `<Space>` but the modifier combination is not supported by a
+    all terminals, so switch to `Backspace` instead
+- [ ] Refactor `schedule` subcommand to support crontab input
+  - [ ] Create minimal `crontab`pest parser crate?

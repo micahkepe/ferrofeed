@@ -456,24 +456,24 @@ impl<'a> App<'a> {
         if let Some(popup) = &mut self.popup {
             match popup {
                 PopupState::Help => {
-                    match key.code {
-                        KeyCode::Char('?') | KeyCode::Esc => {
+                    match (key.modifiers, key.code) {
+                        (_, KeyCode::Char('?')) | (_, KeyCode::Esc) => {
                             self.popup = None;
                             self.help_scroll = 0; // Reset scroll when closing
                         }
-                        KeyCode::Down | KeyCode::Char('j') => {
+                        (_, KeyCode::Down) | (_, KeyCode::Char('j')) => {
                             self.help_scroll = self.help_scroll.saturating_add(1);
                         }
-                        KeyCode::Up | KeyCode::Char('k') => {
+                        (_, KeyCode::Up) | (_, KeyCode::Char('k')) => {
                             self.help_scroll = self.help_scroll.saturating_sub(1);
                         }
-                        KeyCode::Char('g') => {
+                        (_, KeyCode::Char('g')) => {
                             self.help_scroll = 0;
                         }
-                        KeyCode::Char('G') => {
+                        (_, KeyCode::Char('G')) => {
                             self.help_scroll = u16::MAX; // Will be clamped by rendering
                         }
-                        KeyCode::Char('q') => {
+                        (_, KeyCode::Char('q')) => {
                             self.quit();
                         }
                         _ => {}
@@ -538,10 +538,10 @@ impl<'a> App<'a> {
                 // Only allow deleting feeds on the feeds page
                 self.try_delete_feed();
             }
-            (_, KeyCode::Char('j') | KeyCode::Down) => {
+            (_, KeyCode::Char('j') | KeyCode::Down) | (_, KeyCode::Char(' ')) => {
                 self.move_down();
             }
-            (_, KeyCode::Char('k') | KeyCode::Up) => {
+            (_, KeyCode::Char('k') | KeyCode::Up) | (_, KeyCode::Backspace) => {
                 self.move_up();
             }
             (_, KeyCode::Char('g')) => {
