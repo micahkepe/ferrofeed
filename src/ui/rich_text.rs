@@ -1,4 +1,6 @@
-//! Provides an adapter for `html2text` to `ratatui` rich text.
+/*!
+Provides an adapter for `html2text` to `ratatui` rich text.
+*/
 use anyhow::{Context, Result};
 use html_escape::decode_html_entities;
 use html2text::render::{RichAnnotation, TaggedLine};

@@ -1,3 +1,9 @@
+/*!
+Database management and CRUD operations.
+
+* Uses `rusqlite` for SQLite-bindings.
+
+*/
 use anyhow::Result;
 use rusqlite::{Connection, params};
 use std::fs;

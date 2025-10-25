@@ -1,4 +1,8 @@
 //! HTTP client for fetching and parsing RSS/Atom feeds.
+//!
+//! TODO: Fetch content past the first `<!-- more -->` tag
+//!
+//! TODO: Possibly restructure data model to use/interface with `feed-rs` crate directly
 
 use anyhow::{Context, Result};
 use feed_rs::parser;

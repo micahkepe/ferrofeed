@@ -1,3 +1,6 @@
+/*!
+Popup/modal components and utilities.
+*/
 use ratatui::{
     layout::{Constraint, Flex, Layout, Rect},
     text::Line,
