@@ -84,7 +84,7 @@ async fn main() -> Result<()> {
 
     match args.command {
         Some(Command::AddFeed { url }) => commands::add_feed(&db, &url).await,
-        Some(Command::RemoveFeed { url }) => commands::remove_feed(&db, &url),
+        Some(Command::RemoveFeed { url }) => commands::remove_feed(&db, &url).await,
         Some(Command::List) => commands::list_feeds(&db),
         Some(Command::Sync) => commands::sync_feeds(&db).await,
         Some(Command::Config) => {

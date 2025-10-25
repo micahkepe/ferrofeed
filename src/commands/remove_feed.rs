@@ -2,10 +2,10 @@
 
 use anyhow::{Context, Result};
 
-use crate::db::Db;
+use crate::{commands::sync_feeds, db::Db};
 
 /// Remove a feed from the database.
-pub fn remove_feed(db: &Db, url: &str) -> Result<()> {
+pub async fn remove_feed(db: &Db, url: &str) -> Result<()> {
     let deleted = db
         .remove_feed(url)
         .context("failed to remove feed from database")?;
@@ -15,6 +15,9 @@ pub fn remove_feed(db: &Db, url: &str) -> Result<()> {
     } else {
         println!("Feed not found: {}", url);
     }
+
+    // Re-sync
+    sync_feeds(db).await?;
 
     Ok(())
 }
