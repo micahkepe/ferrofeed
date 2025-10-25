@@ -36,3 +36,8 @@ Options:
 
 This repository is licensed under an MIT License. See [LICENSE](./LICENSE) for
 more details.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for
+more details.
