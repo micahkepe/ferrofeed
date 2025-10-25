@@ -553,6 +553,9 @@ impl<'a> App<'a> {
             (_, KeyCode::Enter) => {
                 self.select_item();
             }
+            (_, KeyCode::Char('x')) => {
+                self.open_in_browser();
+            }
             (_, KeyCode::Esc) => {
                 self.go_back();
             }
@@ -1018,5 +1021,15 @@ impl<'a> App<'a> {
     /// Set the running state to false to quit the application.
     fn quit(&mut self) {
         self.running = false
+    }
+
+    /// Open the currently-visible feed in the browser if viewing a feed.
+    fn open_in_browser(&self) {
+        if let CurrentScreen::ViewPost { item, .. } = &self.current_page
+            && let Some(link) = &item.link
+            && let Err(err) = open::that(link)
+        {
+            eprintln!("Failed to open link in browser: {}", err);
+        }
     }
 }
