@@ -2,7 +2,7 @@
 
 use anyhow::{Context, Result};
 
-use crate::{client, db::Db};
+use crate::{client, commands::sync_feeds, db::Db};
 
 /// Add a feed to the database. Fetches the feed to validate and extract metadata.
 pub async fn add_feed(db: &Db, url: &str) -> Result<()> {
@@ -23,6 +23,10 @@ pub async fn add_feed(db: &Db, url: &str) -> Result<()> {
     );
 
     println!("Found {} items", parsed_feed.items.len());
+
+    // Sync the feed to fetch new items
+    println!("Syncing feed...");
+    sync_feeds(db).await?;
 
     Ok(())
 }
