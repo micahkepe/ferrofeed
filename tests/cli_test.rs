@@ -48,23 +48,23 @@ fn test_list_feeds_with_data() {
     assert!(result.is_ok());
 }
 
-#[test]
-fn test_remove_feed_success() {
+#[tokio::test]
+async fn test_remove_feed_success() {
     let db = create_test_db();
     db.add_feed("https://example.com/feed.xml", Some("Test Feed"))
         .expect("failed to add feed");
 
-    let result = commands::remove_feed(&db, "https://example.com/feed.xml");
+    let result = commands::remove_feed(&db, "https://example.com/feed.xml").await;
     assert!(result.is_ok());
 
     let feeds = db.list_feeds().expect("failed to list feeds");
     assert_eq!(feeds.len(), 0);
 }
 
-#[test]
-fn test_remove_feed_not_found() {
+#[tokio::test]
+async fn test_remove_feed_not_found() {
     let db = create_test_db();
-    let result = commands::remove_feed(&db, "https://nonexistent.com/feed.xml");
+    let result = commands::remove_feed(&db, "https://nonexistent.com/feed.xml").await;
     assert!(result.is_ok());
 }
 
